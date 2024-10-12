@@ -58,7 +58,7 @@ app.post("/add-user", (req, res) => {
             db.query(insertUserSql, [name, email, photoURL, role], (err, result) => {
                 if (err) {
                     console.error("Error inserting data:", err); 
-                    return res.status(500).send("Error inserting data");
+                    return res.status(500).send({error: "Error inserting data"});
                 }
                 res.status(200).send("User added successfully");
             });
@@ -77,8 +77,44 @@ app.get("/products", (req,res)=>{
 })
 
 app.post("/add-cart", (req,res)=>{
-    const data = req.body;
-    console.log(data);
+    const { product_id, user_email } = req.body;
+
+    const checkQuery = `
+    SELECT * FROM cart WHERE product_id = ? AND user_email = ?
+    `
+    db.query(checkQuery, [product_id, user_email], (err, results)=>{
+        if(err){
+            return res.status(400).send({error: "Something went wrong. "});
+        }
+        if(results.length >0){
+            const existingQuantity = results[0].quantity;
+            const newQuantity = existingQuantity+1;
+            
+            const updateQuantity = `
+            UPDATE cart SET quantity = ?, added_at = NOW() WHERE product_id = ? AND user_email = ? 
+            `
+
+            db.query(updateQuantity, [newQuantity, product_id, user_email], (err, result)=>{
+                if (err) {
+                    return res.status(500).json({ error: 'Database error while updating' });
+                }
+                return res.json({ message: 'Cart updated successfully' });
+            })
+        }
+        else{
+            const insertQuery = `
+            INSERT INTO cart (product_id, user_email, quantity, added_at) 
+                VALUES (?, ?, ?, NOW())
+            `
+
+            db.query(insertQuery, [product_id, user_email, 1], (err, result)=>{
+                if (err) {
+                    return res.status(500).json({ error: 'Database error while inserting' });
+                }
+                return res.json({ message: 'Item added to cart successfully' });
+            })
+        }
+    })
     
 })
 
