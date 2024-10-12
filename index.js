@@ -66,6 +66,22 @@ app.post("/add-user", (req, res) => {
     });
 });
 
+app.get("/products", (req,res)=>{
+    const query = 'SELECT * FROM products'
+    db.query(query, (err, result)=>{
+        if(err){
+            return res.status(400).send("Something went wrong.");
+        }
+        res.send(result)
+    })
+})
+
+app.post("/add-cart", (req,res)=>{
+    const data = req.body;
+    console.log(data);
+    
+})
+
 
 
 app.get("/", (req, res) => {
