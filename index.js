@@ -118,7 +118,21 @@ app.post("/add-cart", (req,res)=>{
     
 })
 
+app.get("/cart/:email", (req, res)=>{
+    const email = req.params.email;
+    
+    const query = `
+    SELECT * FROM cart WHERE user_email = ?
+    `
+    db.query(query, [email], (err, result)=>{
+        if(err){
+            return res.status(400).send({error: "Failed to fetch cart from DB"})
+        }
 
+        return res.send(result);
+    })
+    
+})
 
 app.get("/", (req, res) => {
     res.send("Craft Fusion Server Running ");
