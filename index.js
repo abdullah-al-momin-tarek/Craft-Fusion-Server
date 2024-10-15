@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173', 
-    methods: 'GET, POST, PUT, DELETE, OPTIONS', 
+    methods: 'GET, POST, PUT, PATCH, DELETE, OPTIONS', 
   }));
 
 
@@ -36,12 +36,10 @@ app.post("/add-user", (req, res) => {
 
     const { name, email, photoURL, role } = data;
 
-    // Check if required fields are present
     if (!name || !email || !photoURL || !role) {
         return res.status(400).send("All fields are required.");
     }
 
-    // Query to check if the email already exists
     const checkEmailSql = "SELECT * FROM users WHERE email = ?";
     db.query(checkEmailSql, [email], (err, results) => {
         if (err) {
@@ -50,10 +48,8 @@ app.post("/add-user", (req, res) => {
         }
 
         if (results.length > 0) {
-            // Email already exists in the database
             return res.status(400).send("Email already exists. Please use a different email.");
         } else {
-            // Proceed to insert the user into the database
             const insertUserSql = "INSERT INTO users (name, email, photoURL, role) VALUES (?, ?, ?, ?)";
             db.query(insertUserSql, [name, email, photoURL, role], (err, result) => {
                 if (err) {
@@ -66,12 +62,48 @@ app.post("/add-user", (req, res) => {
     });
 });
 
+app.post("/buy", (req, res) => {
+    const { product_id, buyer_email, seller_email ,quantity } = req.body;
+
+    const query = `INSERT INTO buy_sell (product_id, buyer_email, seller_email, quantity, ordered_at) VALUES (?, ?, ?, ?, NOW())`;
+
+    db.query(query, [product_id, buyer_email,seller_email, quantity], (err, result) => {
+        if (err) {
+            return res.status(400).send({ error: "Failed to buy product" });
+        }
+        const queryDelete = `DELETE FROM cart WHERE product_id = ? AND buyer_email = ?`;
+        db.query(queryDelete, [product_id, buyer_email], (err) => {
+            if (err) {
+                return res.status(400).send({ error: "Failed to remove item from cart" });
+            }
+            
+            return res.status(200).send({ message: "Product bought and removed from cart" });
+        });
+    });
+
+});
+
+
 app.get("/products", (req,res)=>{
     const query = 'SELECT * FROM products'
     db.query(query, (err, result)=>{
         if(err){
             return res.status(400).send("Something went wrong.");
         }
+        res.send(result)
+    })
+})
+
+app.get("/products/:email", (req, res)=>{
+    const email = req.params.email;
+
+    const query = 'SELECT * FROM products WHERE email= ?';
+    db.query(query, [email], (err, result)=>{
+        if(err){
+            return res.status(400).send("Something went wrong.");
+        }
+        console.log(result);
+        
         res.send(result)
     })
 })
@@ -118,20 +150,62 @@ app.post("/add-cart", (req,res)=>{
     
 })
 
-app.get("/cart/:email", (req, res)=>{
+app.get("/cart/:email", (req, res) => {
     const email = req.params.email;
-    
+
     const query = `
-    SELECT * FROM cart WHERE user_email = ?
-    `
-    db.query(query, [email], (err, result)=>{
-        if(err){
-            return res.status(400).send({error: "Failed to fetch cart from DB"})
+    SELECT 
+    cart.id,
+    cart.product_id,
+    cart.user_email,
+    cart.quantity,
+    cart.added_at,
+    products.name as product_name,
+    products.category as product_category,
+    products.price as product_price,
+    products.image as product_image,
+    products.email as seller_email
+    FROM cart 
+    JOIN products
+    ON cart.product_id = products.id
+    WHERE user_email = ?
+    `;
+
+    db.query(query, [email], (err, result) => {
+        if (err) {
+            return res.status(400).send({ error: "Failed to fetch cart from DB" });
         }
 
         return res.send(result);
+    });
+});
+
+app.patch("/cart/:id", (req,res)=>{
+    const id = req.params.id;
+    const {quantity} = req.body;
+    const query = `
+    UPDATE cart SET quantity = ? WHERE id = ?
+    `;
+    db.query(query, [quantity, id], (err, result)=>{
+        if(err){
+            return res.status(400).send({error: "Failed to update cart"});
+        }
+        return res.status(200).send({message: "Updated"});
     })
-    
+})
+
+app.delete("/product/:id", (req, res)=>{
+    const id = req.params.id;
+
+    const query = `
+    DELETE FROM products WHERE id = ?
+    `;
+    db.query(query, [id], (err, result)=>{
+        if(err){
+            return res.status(400).send({error: "Failed to delete from DB"})
+        }
+        return res.status(200).send({message: "Deleted"})
+    })
 })
 
 app.get("/", (req, res) => {
