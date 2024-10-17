@@ -183,7 +183,18 @@ app.get("/cart/:email", (req, res) => {
 app.patch("/cart/:id", (req,res)=>{
     const id = req.params.id;
     const {quantity} = req.body;
-    const query = `
+
+    const productQuantity = `SELECT products.quantity FROM products JOIN cart ON products.id = cart.product_id WHERE cart.id = ?`;
+    
+    
+
+    db.query(productQuantity, [id], (err, result)=>{
+        
+        if (result[0].quantity < quantity){
+            return res.status(200).send({message: "Quantity not available"});
+        }
+        else{
+            const query = `
     UPDATE cart SET quantity = ? WHERE id = ?
     `;
     db.query(query, [quantity, id], (err, result)=>{
@@ -192,6 +203,9 @@ app.patch("/cart/:id", (req,res)=>{
         }
         return res.status(200).send({message: "Updated"});
     })
+        }
+    })
+    
 })
 
 app.delete("/product/:id", (req, res)=>{
@@ -199,6 +213,20 @@ app.delete("/product/:id", (req, res)=>{
 
     const query = `
     DELETE FROM products WHERE id = ?
+    `;
+    db.query(query, [id], (err, result)=>{
+        if(err){
+            return res.status(400).send({error: "Failed to delete from DB"})
+        }
+        return res.status(200).send({message: "Deleted"})
+    })
+})
+
+app.delete("/cart/:id", (req, res)=>{
+    const id = req.params.id;
+
+    const query = `
+    DELETE FROM cart WHERE id = ?
     `;
     db.query(query, [id], (err, result)=>{
         if(err){
