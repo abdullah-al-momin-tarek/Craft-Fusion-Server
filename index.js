@@ -64,10 +64,13 @@ app.post("/add-user", (req, res) => {
 
 app.post("/buy", (req, res) => {
     const { product_id, buyer_email, seller_email ,quantity } = req.body;
+    console.log("I am called");
+    console.log(req.body);
+    
+    
+    const query = `INSERT INTO buy_sell (product_id, quantity, buyer_email, seller_email, date) VALUES (?, ?, ?, ?, NOW())`;
 
-    const query = `INSERT INTO buy_sell (product_id, buyer_email, seller_email, quantity, ordered_at) VALUES (?, ?, ?, ?, NOW())`;
-
-    db.query(query, [product_id, buyer_email,seller_email, quantity], (err, result) => {
+    db.query(query, [product_id, quantity, buyer_email, seller_email], (err, result) => {
         if (err) {
             return res.status(400).send({ error: "Failed to buy product" });
         }
@@ -109,7 +112,11 @@ app.get("/products/:email", (req, res)=>{
 })
 
 app.post("/add-cart", (req,res)=>{
-    const { product_id, user_email } = req.body;
+    const { product_id, user_email, seller_email } = req.body;
+    
+    if(seller_email === user_email){
+        return res.status(400).send({message: "Cannot cart own product."})
+    }
 
     const checkQuery = `
     SELECT * FROM cart WHERE product_id = ? AND user_email = ?
