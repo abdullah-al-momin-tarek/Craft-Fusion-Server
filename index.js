@@ -106,6 +106,31 @@ app.post("/buy", (req, res) => {
 
 });
 
+app.get("/purchase-history/:email", (req,res)=>{
+    const email = req.params.email;
+
+    const query =  `
+    SELECT 
+    buy_sell.product_id,
+    buy_sell.quantity,
+    buy_sell.price,
+    buy_sell.date,
+    products.name as product_name,
+    products.category as product_category,
+    products.image as product_image 
+    FROM buy_sell 
+    JOIN products
+    ON buy_sell.product_id = products.id
+    WHERE buyer_email = ?
+    `;
+    db.query(query, [email], (err, result)=>{
+        if(err){
+            return res.status(400).send("Failed to fetch purchase history");
+        }
+        res.send(result);
+    } )
+})
+
 
 app.get("/products", (req,res)=>{
     const query = 'SELECT * FROM products'
