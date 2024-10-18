@@ -62,6 +62,30 @@ app.post("/add-user", (req, res) => {
     });
 });
 
+app.get("/users", (req, res) => {
+    const query = "SELECT * FROM users";
+    db.query(query, (err, result) => {
+        if (err) {
+            return res.status(400).send("Failed to fetch users from DB");
+        }
+
+        return res.send(result);
+    });
+});
+
+app.get("/user/:email", (req, res) => {
+    const email = req.params.email;
+
+    const query = "SELECT * FROM users WHERE email = ?";
+    db.query(query, [email], (err, result) => {
+        if (err) {
+            return res.status(400).send("Failed to fetch user from DB");
+        }
+
+        return res.send(result[0]);
+    });
+});
+
 app.post("/buy", (req, res) => {
     const { product_id, buyer_email, seller_email ,quantity } = req.body;
     
@@ -122,6 +146,31 @@ app.get("/purchase-history/:email", (req,res)=>{
     JOIN products
     ON buy_sell.product_id = products.id
     WHERE buyer_email = ?
+    `;
+    db.query(query, [email], (err, result)=>{
+        if(err){
+            return res.status(400).send("Failed to fetch purchase history");
+        }
+        res.send(result);
+    } )
+})
+
+app.get("/selling-history/:email", (req,res)=>{
+    const email = req.params.email;
+
+    const query =  `
+    SELECT 
+    buy_sell.product_id,
+    buy_sell.quantity,
+    buy_sell.price,
+    buy_sell.date,
+    products.name as product_name,
+    products.category as product_category,
+    products.image as product_image 
+    FROM buy_sell 
+    JOIN products
+    ON buy_sell.product_id = products.id
+    WHERE seller_email = ?
     `;
     db.query(query, [email], (err, result)=>{
         if(err){
