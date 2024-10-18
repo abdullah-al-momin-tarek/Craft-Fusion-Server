@@ -64,17 +64,17 @@ app.post("/add-user", (req, res) => {
 
 app.post("/buy", (req, res) => {
     const { product_id, buyer_email, seller_email ,quantity } = req.body;
-    console.log("I am called");
-    console.log(req.body);
+    
     
     
     const query = `INSERT INTO buy_sell (product_id, quantity, buyer_email, seller_email, date) VALUES (?, ?, ?, ?, NOW())`;
+    console.log(query, [product_id, quantity, buyer_email, seller_email]);
 
     db.query(query, [product_id, quantity, buyer_email, seller_email], (err, result) => {
         if (err) {
             return res.status(400).send({ error: "Failed to buy product" });
         }
-        const queryDelete = `DELETE FROM cart WHERE product_id = ? AND buyer_email = ?`;
+        const queryDelete = `DELETE FROM cart WHERE product_id = ? AND user_email = ?`;
         db.query(queryDelete, [product_id, buyer_email], (err) => {
             if (err) {
                 return res.status(400).send({ error: "Failed to remove item from cart" });
