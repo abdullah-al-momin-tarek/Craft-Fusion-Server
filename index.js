@@ -77,10 +77,12 @@ app.post("/buy", (req, res) => {
             return res.status(400).send({ error: "Insufficient product quantity" });
         }
         const price = results[0].price;
+
+        const updatePrice = price*quantity;
     
         const query = `INSERT INTO buy_sell (product_id, quantity, buyer_email, seller_email,price, date) VALUES (?, ?, ?, ?, ?, NOW())`;
     
-        db.query(query, [product_id, quantity, buyer_email, seller_email, price], (err, result) => {
+        db.query(query, [product_id, quantity, buyer_email, seller_email, updatePrice], (err, result) => {
             if (err) {
                 return res.status(400).send({ error: "Failed to buy product" });
             }
