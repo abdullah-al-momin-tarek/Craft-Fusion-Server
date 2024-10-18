@@ -65,22 +65,40 @@ app.post("/add-user", (req, res) => {
 app.post("/buy", (req, res) => {
     const { product_id, buyer_email, seller_email ,quantity } = req.body;
     
+    const quantityQuery = `SELECT quantity, price FROM products WHERE id = ?`;
     
-    
-    const query = `INSERT INTO buy_sell (product_id, quantity, buyer_email, seller_email, date) VALUES (?, ?, ?, ?, NOW())`;
-    console.log(query, [product_id, quantity, buyer_email, seller_email]);
-
-    db.query(query, [product_id, quantity, buyer_email, seller_email], (err, result) => {
+    db.query(quantityQuery, [product_id], (err, results) => {
         if (err) {
-            return res.status(400).send({ error: "Failed to buy product" });
+            return res.status(400).send({ error: "Failed to fetch product quantity" });
         }
-        const queryDelete = `DELETE FROM cart WHERE product_id = ? AND user_email = ?`;
-        db.query(queryDelete, [product_id, buyer_email], (err) => {
+    
+        const availableQuantity = results[0].quantity;
+        if (availableQuantity < quantity) {
+            return res.status(400).send({ error: "Insufficient product quantity" });
+        }
+        const price = results[0].price;
+    
+        const query = `INSERT INTO buy_sell (product_id, quantity, buyer_email, seller_email,price, date) VALUES (?, ?, ?, ?, ?, NOW())`;
+    
+        db.query(query, [product_id, quantity, buyer_email, seller_email, price], (err, result) => {
             if (err) {
-                return res.status(400).send({ error: "Failed to remove item from cart" });
+                return res.status(400).send({ error: "Failed to buy product" });
             }
-            
-            return res.status(200).send({ message: "Product bought and removed from cart" });
+            const queryDelete = `DELETE FROM cart WHERE product_id = ? AND user_email = ?`;
+            db.query(queryDelete, [product_id, buyer_email], (err) => {
+                if (err) {
+                    return res.status(400).send({ error: "Failed to remove item from cart" });
+                }
+                const updateQuantity = availableQuantity - quantity;
+                const updateQuantityQuery = `UPDATE products SET quantity = ? WHERE id = ?`;
+                db.query(updateQuantityQuery, [updateQuantity, product_id], (err) => {
+                    if (err) {
+                        return res.status(400).send({ error: "Failed to update product quantity" });
+                    }
+                    
+                    res.status(200).send({message: "Product bought successfully"});
+                });
+            });
         });
     });
 
