@@ -130,6 +130,18 @@ app.post("/buy", (req, res) => {
 
 });
 
+app.post("/add-product", (req, res) => {
+    const { name, category, price, quantity, image, email } = req.body;
+
+    const query = `INSERT INTO products (name, category, price, quantity, image, email) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.query(query, [name, category, price, quantity, image, email], (err, result) => {
+        if (err) {
+            return res.status(400).send("Failed to add product to DB");
+        }
+        res.status(200).send({message: "Product Added"});
+    });
+})
+
 app.get("/purchase-history/:email", (req,res)=>{
     const email = req.params.email;
 
