@@ -32,7 +32,6 @@ db.connect((err) => {
 
 app.post("/add-user", (req, res) => {
     const data = req.body;
-    console.log("Received data:", data);
 
     const { name, email, photoURL, role } = data;
 
@@ -211,7 +210,6 @@ app.get("/products/:email", (req, res)=>{
         if(err){
             return res.status(400).send("Something went wrong.");
         }
-        console.log(result);
         
         res.send(result)
     })
