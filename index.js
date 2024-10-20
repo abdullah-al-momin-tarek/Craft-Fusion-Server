@@ -130,10 +130,10 @@ app.post("/buy", (req, res) => {
 });
 
 app.post("/add-product", (req, res) => {
-    const { name, category, price, quantity, image, email } = req.body;
+    const { name, category, price, quantity,description, image, email } = req.body;
 
-    const query = `INSERT INTO products (name, category, price, quantity, image, email) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.query(query, [name, category, price, quantity, image, email], (err, result) => {
+    const query = `INSERT INTO products (name, category, price, quantity,description, image, email) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.query(query, [name, category, price, quantity, description, image, email], (err, result) => {
         if (err) {
             return res.status(400).send("Failed to add product to DB");
         }
