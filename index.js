@@ -141,6 +141,30 @@ app.post("/add-product", (req, res) => {
     });
 })
 
+app.get("/order-history", (req,res)=>{
+    const query = `
+    SELECT 
+    buy_sell.product_id,
+    buy_sell.quantity,
+    buy_sell.price,
+    buy_sell.date,
+    buy_sell.buyer_email,
+    buy_sell.seller_email,
+    products.name as product_name,
+    products.category as product_category,
+    products.image as product_image 
+    FROM buy_sell 
+    JOIN products
+    ON buy_sell.product_id = products.id
+    `;
+    db.query(query, (err, result)=>{
+        if(err){
+            return res.status(400).send("Failed to fetch purchase history");
+        }
+        res.send(result);
+    } )
+})
+
 app.get("/purchase-history/:email", (req,res)=>{
     const email = req.params.email;
 
