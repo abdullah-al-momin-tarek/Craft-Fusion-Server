@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173', 
-    methods: 'GET, POST, PUT, PATCH, DELETE, OPTIONS', 
+    methods: 'GET, POST, PUT, PATCH, DELETE', 
   }));
 
 
@@ -138,6 +138,19 @@ app.post("/add-product", (req, res) => {
             return res.status(400).send("Failed to add product to DB");
         }
         res.status(200).send({message: "Product Added"});
+    });
+})
+
+app.patch("/update-product/:id", (req, res) => {
+    const id = req.params.id;
+    const { name, category, price, quantity, description, image } = req.body;
+
+    const query = `UPDATE products SET name = ?, category = ?, price = ?, quantity = ?, description = ?, image = ? WHERE id = ?`;
+    db.query(query, [name, category, price, quantity, description, image, id], (err, result) => {
+        if (err) {
+            return res.status(400).send("Failed to update product in DB");
+        }
+        res.status(200).send("Product updated successfully");
     });
 })
 
